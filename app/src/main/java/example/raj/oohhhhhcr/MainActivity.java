@@ -6,11 +6,15 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
+
+import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -59,15 +63,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         ImageView ivImage = (ImageView) findViewById(R.id.ivImage);
+        Context context = getApplicationContext();
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUEST_CAMERA) {
-                Uri picUri = data.getData();
-                performCrop(picUri);
-               /* Bundle extra = data.getExtras();
-                Bitmap thumbnail =  extra.getParcelable("data");
-                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                //Uri picUri = data.getData();
+                //performCrop(picUri);
+                Bitmap thumbnail =  (Bitmap) data.getExtras().get("data");
+                /*ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 //thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
-                Context context = getApplicationContext();
                 File destination = new File(context.getFilesDir(), System.currentTimeMillis() + ".jpg");
                 FileOutputStream fo;
                 try {
@@ -77,13 +80,13 @@ public class MainActivity extends AppCompatActivity {
                     fo.close();
                 } catch (Exception e) {
                     e.printStackTrace();
-                }
+                }*/
                 if (ivImage != null)
-                    ivImage.setImageBitmap(thumbnail);*/
+                    ivImage.setImageBitmap(thumbnail);
             }
             else if (requestCode == SELECT_FILE) {
                 Uri selectedImageUri = data.getData();
-                /*String[] projection = {MediaStore.MediaColumns.DATA};
+                String[] projection = {MediaStore.MediaColumns.DATA};
                 Cursor cursor = getContentResolver().query(selectedImageUri, projection, null, null, null);
                 int column_index = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
                 cursor.moveToFirst();
@@ -98,11 +101,31 @@ public class MainActivity extends AppCompatActivity {
                     scale *= 2;
                 options.inSampleSize = scale;
                 //options.inJustDecodeBounds = false;
-                bm = BitmapFactory.decodeFile(selectedImagePath, options);*/
+                bm = BitmapFactory.decodeFile(selectedImagePath, options);
                 if (ivImage != null)
                     ivImage.setImageURI(selectedImageUri);
-                else
-                    System.out.println("Not able to take From Gallery");
+                //TessDataManager.initTessTrainedData(context);
+                String Data_Path = context.getFilesDir().toString() + "/OCR/";
+                String tessPath = context.getFilesDir().toString() + "/OCR/tessdata/";
+                File dir = new File(Data_Path);
+                if (!dir.exists()) {
+                    if(!dir.mkdirs())
+                        System.out.println("Failed");
+                }
+                dir = new File(tessPath);
+                if (!dir.exists()) {
+                    if(!dir.mkdirs())
+                        System.out.println("Failed");
+                }
+                TessBaseAPI baseApi = new TessBaseAPI();
+                baseApi.setDebug(true);
+                System.out.println("Starting");
+                baseApi.init(Data_Path, "eng");
+                baseApi.setImage(bm);
+                String recognizedText = baseApi.getUTF8Text();
+                baseApi.end();
+                System.out.println(recognizedText);
+                System.out.println("End");
             }
             else if(requestCode == PIC_CROP) {
                 Bundle extras = data.getExtras();
