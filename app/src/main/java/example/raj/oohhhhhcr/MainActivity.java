@@ -17,6 +17,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SELECT_FILE = 1;
     private static final int REQUEST_CAMERA = 2;
     private static final int PIC_CROP = 3;
+    public static final String EXTRA_MESSAGE = "BTP";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +52,47 @@ public class MainActivity extends AppCompatActivity {
     public void camBtn(View view) {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, REQUEST_CAMERA);
+    }
+
+    public void trainData(Bitmap bm) {
+        Context context = getApplicationContext();
+        String Data_Path = context.getFilesDir().toString() + "/OCR/";
+        String tessPath = context.getFilesDir().toString() + "/OCR/tessdata/";
+        File dir = new File(Data_Path);
+        if (!dir.exists()) {
+            if(!dir.mkdirs())
+                System.out.println("Failed");
+        }
+        dir = new File(tessPath);
+        if (!dir.exists()) {
+            if(!dir.mkdirs())
+                System.out.println("Failed");
+        }
+        if (!(new File(Data_Path + "tessdata/" + "eng" + ".traineddata")).exists()) {
+            try {
+                AssetManager assetManager = getAssets();
+                InputStream in = assetManager.open("tessdata/" + "eng" + ".traineddata");
+                OutputStream out = new FileOutputStream(Data_Path + "tessdata/" + "eng" + ".traineddata");
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+                in.close();
+                out.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        TessBaseAPI baseApi = new TessBaseAPI();
+        baseApi.setDebug(true);
+        baseApi.init(Data_Path, "eng");
+        baseApi.setImage(bm);
+        String recognizedText = baseApi.getUTF8Text();
+        baseApi.end();
+        Intent intent = new Intent(this, DisplayText.class);
+        intent.putExtra(EXTRA_MESSAGE, recognizedText);
+        startActivity(intent);
     }
 
     public void performCrop(Uri picUri) {
@@ -93,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
                 }*/
                 if (ivImage != null)
                     ivImage.setImageBitmap(thumbnail);
+                trainData(thumbnail);
             }
             else if (requestCode == SELECT_FILE) {
                 Uri selectedImage = data.getData();
@@ -110,44 +154,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (ivImage != null)
                     ivImage.setImageBitmap(bm);
-                //TessDataManager.initTessTrainedData(context);
-                String Data_Path = context.getFilesDir().toString() + "/OCR/";
-                String tessPath = context.getFilesDir().toString() + "/OCR/tessdata/";
-                File dir = new File(Data_Path);
-                if (!dir.exists()) {
-                    if(!dir.mkdirs())
-                        System.out.println("Failed");
-                }
-                dir = new File(tessPath);
-                if (!dir.exists()) {
-                    if(!dir.mkdirs())
-                        System.out.println("Failed");
-                }
-                if (!(new File(Data_Path + "tessdata/" + "eng" + ".traineddata")).exists()) {
-                    try {
-                        AssetManager assetManager = getAssets();
-                        InputStream in = assetManager.open("tessdata/" + "eng" + ".traineddata");
-                        OutputStream out = new FileOutputStream(Data_Path + "tessdata/" + "eng" + ".traineddata");
-                        byte[] buf = new byte[1024];
-                        int len;
-                        while ((len = in.read(buf)) > 0) {
-                            out.write(buf, 0, len);
-                        }
-                        in.close();
-                        out.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                TessBaseAPI baseApi = new TessBaseAPI();
-                baseApi.setDebug(true);
-                System.out.println("Starting");
-                baseApi.init(Data_Path, "eng");
-                baseApi.setImage(bm);
-                String recognizedText = baseApi.getUTF8Text();
-                baseApi.end();
-                System.out.println(recognizedText);
-                System.out.println("End");
+                trainData(bm);
             }
             else if(requestCode == PIC_CROP) {
                 Bundle extras = data.getExtras();
