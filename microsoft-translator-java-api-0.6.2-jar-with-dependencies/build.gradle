@@ -1,0 +1,2 @@
+configurations.maybeCreate("default")
+artifacts.add("default", file('microsoft-translator-java-api-0.6.2-jar-with-dependencies.jar'))

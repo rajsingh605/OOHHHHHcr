@@ -2,7 +2,6 @@ package example.raj.oohhhhhcr;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -11,13 +10,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -50,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void camBtn(View view) {
+        Context context = getApplicationContext();
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         startActivityForResult(intent, REQUEST_CAMERA);
     }
@@ -122,8 +118,9 @@ public class MainActivity extends AppCompatActivity {
                 //Uri picUri = data.getData();
                 //performCrop(picUri);
                 Bitmap thumbnail =  (Bitmap) data.getExtras().get("data");
-                /*ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                //thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
+
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
                 File destination = new File(context.getFilesDir(), System.currentTimeMillis() + ".jpg");
                 FileOutputStream fo;
                 try {
@@ -133,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                     fo.close();
                 } catch (Exception e) {
                     e.printStackTrace();
-                }*/
+                }
                 if (ivImage != null)
                     ivImage.setImageBitmap(thumbnail);
                 trainData(thumbnail);
@@ -143,9 +140,9 @@ public class MainActivity extends AppCompatActivity {
                 String[] filePathColumn = { MediaStore.Images.Media.DATA };
                 Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
                 cursor.moveToFirst();
-                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                /*int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
                 String imgDecodableString = cursor.getString(columnIndex);
-                cursor.close();
+                cursor.close();*/
                 Bitmap bm = null;
                 try {
                     bm = BitmapFactory.decodeStream(getContentResolver().openInputStream(selectedImage));
